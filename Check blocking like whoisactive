@@ -1,0 +1,20 @@
+select spid,er.percent_complete,db_name(sp.dbid) as dbname,hostname,loginame,er.blocking_session_id,
+	cast(((datediff(s,start_time,getdate()))/3600) as varchar) + ' hour(s), '
+        + cast((datediff(s,start_time,getdate())%3600)/60 as varchar) + 'min, '
+        + cast((datediff(s,start_time,getdate())%60) as varchar) + ' sec' as running_time,
+    cast((estimated_completion_time/3600000) as varchar) + ' hour(s), '
+        + cast((estimated_completion_time %3600000)/60000 as varchar) + 'min, '
+        + cast((estimated_completion_time %60000)/1000 as varchar) + ' sec' as est_time_to_go,
+    dateadd(second,estimated_completion_time/1000, getdate()) as est_completion_time,er.command, sp.dbid,lastwaittype, 
+substring(est.text, (er.statement_start_offset/2)+1, 
+        ((case er.statement_end_offset
+         when -1 then datalength(est.text)
+         else er.statement_end_offset
+         end - er.statement_start_offset)/2) + 1) as querytext,
+text,cpu,login_time,
+sp.status,program_name,nt_domain, nt_username
+from sysprocesses sp 
+inner join sys.dm_exec_requests er
+on sp.spid = er.session_id
+cross apply sys.dm_exec_sql_text(er.sql_handle) est
+order by running_time desc
