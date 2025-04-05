@@ -1,0 +1,117 @@
+Step 1: Check Logs
+SELECT * 
+FROM msdb.dbo.log_shipping_secondary_databases;
+
+
+Step 2: Check the Log Shipping Restore Job Status
+
+EXEC msdb.dbo.sp_help_job 
+    @job_name = 'LSRestore_YourDatabaseName';
+
+
+If you see errors, check the SQL Agent Job History:
+
+EXEC msdb.dbo.sp_help_jobhistory 
+    @job_name = 'LSRestore_YourDatabaseName';
+
+
+Step 3: Check Last Restored Log Backup
+
+SELECT secondary_database, 
+       last_restored_file, 
+       last_restored_date
+FROM msdb.dbo.log_shipping_secondary_databases
+ORDER BY last_restored_date DESC;
+
+
+Step 4: Check for Missing Log Backup Files
+
+SELECT primary_server, 
+       primary_database, 
+       backup_source_directory, 
+       last_copied_file, 
+       last_copied_date
+FROM msdb.dbo.log_shipping_secondary
+ORDER BY last_copied_date DESC;
+
+
+Step 5: Check Log Shipping Error Messages
+
+SELECT agent_id, 
+       log_time, 
+       log_type, 
+       message 
+FROM msdb.dbo.log_shipping_monitor_error_detail
+ORDER BY log_time DESC;
+
+
+Step 6: Check for Blocking or Restore Issues
+
+SELECT blocking_session_id, wait_type, wait_time, status, command
+FROM sys.dm_exec_requests 
+WHERE command LIKE 'RESTORE%';
+
+
+If blocking exists, you can kill the blocking session:
+
+
+KILL <session_id>;
+
+-------------------------------------------------------------------------------------------------------------------
+The LSAlert job checks if the last_restored_date has exceeded the restore_threshold value. If it's too low, alerts will trigger even when restores are working fine.
+
+
+Run this query on the Secondary Server
+
+Step 1: Check the Restore Threshold Settings
+
+SELECT secondary_database, 
+       restore_threshold, 
+       last_restored_date, 
+       GETDATE() AS CurrentTime,
+       DATEDIFF(MINUTE, last_restored_date, GETDATE()) AS MinutesSinceLastRestore
+FROM msdb.dbo.log_shipping_secondary_databases;
+
+
+Step 2: Increase the Restore Threshold
+
+EXEC msdb.dbo.sp_change_log_shipping_secondary_database  
+    @secondary_database = 'YourDatabaseName',
+    @restore_threshold = 60; -- Set to a reasonable number (default is 45 minutes)
+
+
+Step 3: Manually Update Last Restored Date (If Stale)
+
+If last_restored_date is not updating, but logs are restoring fine, manually update it:
+
+UPDATE msdb.dbo.log_shipping_secondary_databases
+SET last_restored_date = GETDATE()
+WHERE secondary_database = 'YourDatabaseName';
+
+
+Step 4: Check for Outdated Alert Entries in log_shipping_monitor_history_detail
+
+SELECT * 
+FROM msdb.dbo.log_shipping_monitor_history_detail 
+WHERE message LIKE '%Alert%';
+
+
+If there are old alert messages that are no longer valid, you can clear them:
+
+DELETE FROM msdb.dbo.log_shipping_monitor_history_detail
+WHERE log_time < DATEADD(HOUR, -12, GETDATE()); -- Delete alerts older than 12 hours
+
+
+Step 5: Restart SQL Server Agent
+
+EXEC xp_servicecontrol 'STOP', 'SQLServerAgent';
+WAITFOR DELAY '00:00:05';  -- 5-second wait
+EXEC xp_servicecontrol 'START', 'SQLServerAgent';
+
+
+
+Step 6: Manually Run the LSAlert Job
+Force the LSAlert job to run and check if it still fails:
+
+
+EXEC msdb.dbo.sp_start_job @job_name = 'LSAlert_YourDatabaseName';
