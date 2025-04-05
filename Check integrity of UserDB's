@@ -1,0 +1,3 @@
+DECLARE @dbName NVARCHAR(255); DECLARE db_cursor CURSOR FOR SELECT name FROM sys.databases WHERE database_id > 4; 
+-- This filters out system databases (ID 1-4) OPEN db_cursor; FETCH NEXT FROM db_cursor INTO @dbName; WHILE @@FETCH_STATUS = 0 BEGIN PRINT 'Checking database: ' + @dbName; EXEC('DBCC CHECKDB([' + @dbName + ']) 
+WITH NO_INFOMSGS, ALL_ERRORMSGS'); FETCH NEXT FROM db_cursor INTO @dbName; END CLOSE db_cursor; DEALLOCATE db_cursor;
