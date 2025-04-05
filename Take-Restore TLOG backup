@@ -1,0 +1,16 @@
+Step 1: Take a Transaction Log Backup
+
+BACKUP LOG [YourDatabaseName]
+TO DISK = 'D:\SQLBackups\YourDatabaseName_Log.trn'
+WITH NOFORMAT, NOINIT,  
+NAME = 'YourDatabaseName_LogBackup',  
+SKIP, NOREWIND, NOUNLOAD, COMPRESSION, STATS = 10;
+
+
+
+Step 2: Restore a Transaction Log Backup
+
+
+RESTORE LOG [YourDatabaseName]
+FROM DISK = 'D:\SQLBackups\YourDatabaseName_Log.trn'
+WITH NORECOVERY, STATS = 10;
