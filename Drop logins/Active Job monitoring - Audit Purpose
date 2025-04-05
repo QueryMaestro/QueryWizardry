@@ -1,0 +1,17 @@
+USE msdb; 
+GO 
+SELECT ja.job_id, j.name AS JobName, ja.start_execution_date AS StartExecutionDate, 
+ja.stop_execution_date AS StopExecutionDate, s.session_id, r.command AS CurrentCommand 
+FROM sysjobactivity ja 
+INNER JOIN sysjobs j ON ja.job_id = j.job_id 
+LEFT JOIN sys.dm_exec_sessions s ON ja.session_id = s.session_id 
+LEFT JOIN sys.dm_exec_requests r ON s.session_id = r.session_id;
+
+
+USE msdb; 
+GO 
+SELECT j.name AS JobName, h.run_status, h.run_date, h.run_time, h.run_duration, h.message 
+FROM sysjobhistory h 
+INNER JOIN sysjobs j ON h.job_id = j.job_id 
+ORDER BY h.run_date DESC, 
+h.run_time DESC;
