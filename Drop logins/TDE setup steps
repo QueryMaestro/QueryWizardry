@@ -1,0 +1,57 @@
+Step 1
+Take a backup of the database
+ 
+Step 2 - Create a Master key
+USE master;
+Go
+CREATE MASTER KEY 
+ENCRYPTION BY PASSWORD = ‘5gdhtst%&@M2’
+Go
+ 
+Step 3 – Take backup of Master Key
+ 
+USE master
+Go
+OPEN MASTER KEY DECRYPTION BY PASSWORD = ‘5gdhtst%&@M2’;
+BACKUP MASTER KEY TO FILE ‘\\PURESTORAGE’
+ENCRYPTION BY PASSWORD = ‘5gdhtst%&@M2’
+ 
+ 
+Restore Master Key on Secondary 
+USE master;
+Go
+RESTORE MASTER KEY FROM FILE = ‘\\PURESTORAGE’
+DECRYPTION BY PASSWORD = ‘5gdhtst%&@M2’
+ENCRYPTION BY PASSWORD = ‘5gdhtst%&@M2’
+ 
+Create Certificate
+ 
+USE master;
+Go
+CREATE CERTIFICATE TDE_CERTOIFICATE
+    WITH SUBJECT = CERTIFICATE FOR TDE;
+GO
+ 
+Step 4 – Create Database Encryption key
+ 
+USE database_name;
+Go
+CREATE DATABASE ENCRYPTION KEY
+WITH ALGORITHM = AES_256
+ENCRYPTION BY SERVER CERTIFICATE TDE_CERTIFICATE
+ 
+ 
+ 
+Enable encryption
+ 
+ALTER DATABASE db_name
+SET ENCRYPTION ON
+ 
+Backup Certificate and the private key associated with the Certificate
+ 
+USE master;
+Go
+BACKUP CERTIFICATE [TDE_CERTIFICATE]
+TO FILE = ‘\\PURESTORAGE’
+WITH PRIVATE KEY (FILE = ‘\\PURESTORAGE’)
+ENCRYPTION BY PASSWORD = ‘5gdhtst%&@M2’
