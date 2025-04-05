@@ -1,0 +1,16 @@
+SELECT
+    s.name AS SchemaName,
+    t.name AS TableName,
+    SUM(p.rows) AS RowCounts
+FROM
+    sys.tables t
+INNER JOIN
+    sys.schemas s ON t.schema_id = s.schema_id  -- Get schema name
+INNER JOIN
+    sys.partitions p ON t.object_id = p.object_id
+WHERE
+    p.index_id < 2  -- 0 for heap tables, 1 for clustered index tables
+GROUP BY
+    s.name, t.name
+ORDER BY
+    RowCounts DESC, TableName;
