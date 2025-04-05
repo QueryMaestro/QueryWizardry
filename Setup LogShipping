@@ -1,0 +1,94 @@
+Step 1: Enable Log Shipping on Primary Server
+
+-- Step 1: Enable log shipping
+EXEC master.dbo.sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC master.dbo.sp_configure 'xp_cmdshell', 1; -- Required for file operations
+RECONFIGURE;
+
+
+Step 2: Configure Log Shipping on the Primary Database
+
+-- Variables
+DECLARE @PrimaryDB NVARCHAR(100) = 'YourPrimaryDB'; -- Source database name
+DECLARE @BackupFolder NVARCHAR(255) = '\\PrimaryServer\LogShippingBackup'; -- Network share for backups
+
+-- 1️⃣ Enable Log Shipping on Primary Database
+EXEC master.dbo.sp_add_log_shipping_primary_database 
+    @database = @PrimaryDB, 
+    @backup_directory = @BackupFolder, 
+    @backup_share = @BackupFolder, 
+    @backup_retention_period = 1440, -- Retain backups for 24 hours
+    @monitor_server = NULL, 
+    @monitor_server_security_mode = 1;
+
+-- 2️⃣ Add Log Shipping Backup Job
+EXEC master.dbo.sp_add_log_shipping_primary_database 
+    @database = @PrimaryDB, 
+    @backup_job_name = @PrimaryDB + '_LogShippingBackup', 
+    @backup_retention_period = 1440, -- Retain backups for 24 hours
+    @backup_threshold = 60, 
+    @threshold_alert_enabled = 1, 
+    @history_retention_period = 1440;
+
+
+Step 3: Restore the Full Backup on Secondary Server
+
+
+RESTORE DATABASE YourSecondaryDB
+FROM DISK = '\\PrimaryServer\LogShippingBackup\YourPrimaryDB.bak'
+WITH NORECOVERY, 
+MOVE 'YourDBData' TO 'D:\SQLData\YourSecondaryDB.mdf',
+MOVE 'YourDBLog' TO 'D:\SQLLogs\YourSecondaryDB.ldf';
+
+
+
+Step 4: Configure Log Shipping on the Secondary Server
+
+
+-- Variables
+DECLARE @SecondaryDB NVARCHAR(100) = 'YourSecondaryDB';
+DECLARE @PrimaryServer NVARCHAR(100) = 'YourPrimaryServer'; 
+DECLARE @BackupFolder NVARCHAR(255) = '\\PrimaryServer\LogShippingBackup';
+
+-- 1️⃣ Add Secondary Database
+EXEC master.dbo.sp_add_log_shipping_secondary_database 
+    @secondary_database = @SecondaryDB, 
+    @primary_server = @PrimaryServer, 
+    @primary_database = 'YourPrimaryDB', 
+    @restore_mode = 1, -- 1 = Standby (Read-Only), 0 = No Recovery
+    @disconnect_users = 1, 
+    @restore_threshold = 45, 
+    @threshold_alert_enabled = 1, 
+    @history_retention_period = 1440;
+
+-- 2️⃣ Add Log Shipping Copy Job (Copy logs from primary server)
+EXEC master.dbo.sp_add_log_shipping_secondary_primary 
+    @primary_server = @PrimaryServer, 
+    @primary_database = 'YourPrimaryDB', 
+    @backup_source_directory = @BackupFolder, 
+    @backup_destination_directory = 'D:\LogShippingCopy', 
+    @copy_job_name = 'LogShippingCopy_YourDB', 
+    @copy_retention_period = 1440;
+
+-- 3️⃣ Add Log Shipping Restore Job (Apply logs to secondary)
+EXEC master.dbo.sp_add_log_shipping_secondary_database 
+    @secondary_database = @SecondaryDB, 
+    @restore_job_name = 'LogShippingRestore_YourDB', 
+    @restore_threshold = 45, 
+    @threshold_alert_enabled = 1;
+
+
+Step 5: Verify Log Shipping Configuration
+
+
+-- On Primary Server: Check log shipping configuration
+SELECT * FROM msdb.dbo.log_shipping_primary_databases;
+
+-- On Secondary Server: Check restore status
+SELECT * FROM msdb.dbo.log_shipping_secondary_databases;
+
+-- Check log shipping jobs
+EXEC msdb.dbo.sp_help_job @job_name = 'YourPrimaryDB_LogShippingBackup';
+EXEC msdb.dbo.sp_help_job @job_name = 'LogShippingCopy_YourDB';
+EXEC msdb.dbo.sp_help_job @job_name = 'LogShippingRestore_YourDB';
