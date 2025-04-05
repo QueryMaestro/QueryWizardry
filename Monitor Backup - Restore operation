@@ -1,0 +1,18 @@
+SELECT
+    r.session_id,
+    r.command,
+    r.start_time,
+    r.percent_complete,
+    CAST((DATEDIFF(SECOND, r.start_time, GETDATE()) / 3600) AS VARCHAR) + ' hours, ' +
+    CAST((DATEDIFF(SECOND, r.start_time, GETDATE()) % 3600) / 60 AS VARCHAR) + ' min' AS running_time,
+    DATEADD(SECOND, r.estimated_completion_time / 1000, GETDATE()) AS estimated_completion_time,
+    CAST((r.estimated_completion_time / 3600000) AS VARCHAR) + ' hours, ' +
+    CAST((r.estimated_completion_time % 3600000) / 60000 AS VARCHAR) + ' min' AS time_to_completion,
+    SUBSTRING(qt.text, r.statement_start_offset / 2,
+              (CASE WHEN r.statement_end_offset = -1
+                    THEN LEN(CONVERT(NVARCHAR(MAX), qt.text)) * 2
+                    ELSE r.statement_end_offset
+               END - r.statement_start_offset) / 2) AS sql_statement
+FROM sys.dm_exec_requests r
+OUTER APPLY sys.dm_exec_sql_text(r.sql_handle) AS qt
+WHERE r.command IN ('BACKUP DATABASE', 'RESTORE DATABASE');
