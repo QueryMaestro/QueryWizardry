@@ -1,0 +1,18 @@
+USE [YourDatabaseName];
+GO
+
+-- Create a new login for SQL Server authentication
+CREATE LOGIN [YourLoginName] WITH PASSWORD = 'YourStrongPassword!';
+GO
+
+-- Create a user for the login
+CREATE USER [YourUserName] FOR LOGIN [YourLoginName];
+GO
+
+-- Add the user to the db_datareader role
+EXEC sp_addrolemember 'db_datareader', 'YourUserName';
+GO
+
+-- Add the user to the db_datawriter role
+EXEC sp_addrolemember 'db_datawriter', 'YourUserName';
+GO
