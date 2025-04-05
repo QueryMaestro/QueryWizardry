@@ -1,0 +1,13 @@
+SELECT 
+jobs.job_id, jobs.name AS job_name, schedules.schedule_id, 
+schedules.name AS schedule_name, schedules.freq_type, 
+schedules.freq_interval, schedules.freq_subday_type, 
+schedules.freq_subday_interval, schedules.freq_relative_interval, 
+schedules.freq_recurrence_factor, schedules.active_start_date, 
+schedules.active_end_date, schedules.active_start_time, 
+schedules.active_end_time FROM msdb.dbo.sysjobs AS jobs 
+INNER JOIN 
+msdb.dbo.sysjobschedules AS job_schedules ON jobs.job_id = job_schedules.job_id 
+INNER JOIN 
+msdb.dbo.sysschedules AS schedules ON job_schedules.schedule_id = schedules.schedule_id 
+ORDER BY jobs.name, schedules.name;
