@@ -1,0 +1,87 @@
+-- Replace 'username' with the actual username you want to remove
+DECLARE @username NVARCHAR(128) = 'username';
+DECLARE @dbName NVARCHAR(128);
+DECLARE @sql NVARCHAR(MAX);
+
+-- Check if the login exists at the server level
+IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = @username)
+BEGIN
+    -- Disable the login to prevent new connections
+    ALTER LOGIN [@username] DISABLE;
+
+    -- Kill active sessions related to this login
+    DECLARE @sessionId INT;
+    DECLARE session_cursor CURSOR FOR
+    SELECT session_id 
+    FROM sys.dm_exec_sessions 
+    WHERE login_name = @username;
+
+    OPEN session_cursor;
+    FETCH NEXT FROM session_cursor INTO @sessionId;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        PRINT 'Killing session: ' + CAST(@sessionId AS NVARCHAR);
+        EXEC('KILL ' + CAST(@sessionId AS NVARCHAR));
+        FETCH NEXT FROM session_cursor INTO @sessionId;
+    END;
+
+    CLOSE session_cursor;
+    DEALLOCATE session_cursor;
+
+    -- Iterate over all user databases and remove the user
+    DECLARE db_cursor CURSOR FOR
+    SELECT name 
+    FROM sys.databases
+    WHERE state_desc = 'ONLINE' AND name NOT IN ('master', 'tempdb', 'model', 'msdb');
+
+    OPEN db_cursor;
+    FETCH NEXT FROM db_cursor INTO @dbName;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        PRINT 'Processing database: ' + @dbName;
+
+        -- Drop user after handling schema ownership
+        SET @sql = '
+        USE [' + @dbName + '];
+
+        DECLARE @schemaName NVARCHAR(128);
+        DECLARE schema_cursor CURSOR FOR
+        SELECT name FROM sys.schemas WHERE principal_id = USER_ID(''' + @username + ''');
+
+        OPEN schema_cursor;
+        FETCH NEXT FROM schema_cursor INTO @schemaName;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            PRINT ''Transferring ownership of schema: '' + @schemaName;
+            EXEC(''ALTER AUTHORIZATION ON SCHEMA::['' + @schemaName + ''] TO dbo'');
+            FETCH NEXT FROM schema_cursor INTO @schemaName;
+        END;
+
+        CLOSE schema_cursor;
+        DEALLOCATE schema_cursor;
+
+        IF EXISTS (SELECT 1 FROM sys.database_principals WHERE name = ''' + @username + ''')
+        BEGIN
+            DROP USER [' + @username + '];
+            PRINT ''User dropped from database: ' + @dbName + ''';
+        END;';
+
+        EXEC sp_executesql @sql;
+
+        FETCH NEXT FROM db_cursor INTO @dbName;
+    END;
+
+    CLOSE db_cursor;
+    DEALLOCATE db_cursor;
+
+    -- Finally, drop the login from the server
+    EXEC sp_droplogin @username;
+    PRINT 'Login successfully removed from the server.';
+END;
+ELSE
+BEGIN
+    PRINT 'Login not found on this server: ' + @username;
+END;
