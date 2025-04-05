@@ -1,0 +1,33 @@
+--Server Scoped DMV's
+
+--Cached Query plans available to SQL server
+select * from sys.dm_exec_cached_plans
+
+--Current connections to SQL server
+select * from sys.dm_exec_connections
+
+--Active sessions in SQL server
+select * from sys.dm_exec_sessions
+
+--Lists of current executing queries
+select * from sys.dm_exec_requests
+
+--Query optimization details
+select * from sys.dm_exec_query_optimizer_info
+
+--Transaction state for an instance of SQL server
+select * from sys.dm_tran_active_transactions
+
+--Returns information of what resources SQL server is waiting on
+select * from sys.dm_os_wait_stats
+
+--Returns Performance MOnitor Counters related to SQL server
+select * from sys.dm_os_performance_counters
+
+DATABASE SCOPED DMV's
+
+--Log space Utilization
+Select * from sys.dm_db_log_space_usage
+
+--Seeks, scans, lookups per index in Database
+Select * from sys.dm_db_index_usage_stats
