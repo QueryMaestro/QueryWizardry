@@ -1,0 +1,28 @@
+SELECT
+    r.session_id,
+    r.command,
+    r.start_time,
+    r.percent_complete,
+    CAST((DATEDIFF(SECOND, r.start_time, GETDATE()) / 3600) AS VARCHAR) + ' hours, ' +
+    CAST((DATEDIFF(SECOND, r.start_time, GETDATE()) % 3600) / 60 AS VARCHAR) + ' min' AS running_time,
+    DATEADD(SECOND, r.estimated_completion_time / 1000, GETDATE()) AS estimated_completion_time,
+    CAST((r.estimated_completion_time / 3600000) AS VARCHAR) + ' hours, ' +
+    CAST((r.estimated_completion_time % 3600000) / 60000 AS VARCHAR) + ' min' AS time_to_completion,
+    r.blocking_session_id,  -- Shows the session that is blocking this request (if any)
+    r.cpu_time,
+    r.total_elapsed_time,
+    r.reads,
+    r.writes,
+    r.logical_reads,
+    s.host_name,
+    s.program_name,
+    s.login_name,
+    SUBSTRING(qt.text, r.statement_start_offset / 2,
+              (CASE WHEN r.statement_end_offset = -1
+                    THEN LEN(CONVERT(NVARCHAR(MAX), qt.text)) * 2
+                    ELSE r.statement_end_offset
+               END - r.statement_start_offset) / 2) AS sql_statement
+FROM sys.dm_exec_requests r
+JOIN sys.dm_exec_sessions s ON r.session_id = s.session_id
+OUTER APPLY sys.dm_exec_sql_text(r.sql_handle) AS qt
+ORDER BY r.start_time;
