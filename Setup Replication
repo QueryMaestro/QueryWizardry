@@ -1,0 +1,91 @@
+Ensure SQL Server Agent is Running
+Replication relies on SQL Server Agent, so make sure it's enabled on both the Publisher and Subscriber servers.
+
+
+Run the below to check if sql server agent is enabled on Publisher and Subscriber.
+EXEC xp_servicecontrol 'QUERYSTATE', 'SQLServerAgent';
+
+
+If it's not running, start it manually or with:
+
+EXEC xp_servicecontrol 'START', 'SQLServerAgent';
+
+
+Enable Replication Features
+Run this on the Publisher and Distributor:
+
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'Replication Enabled', 1;
+RECONFIGURE;
+
+
+START REPLICATION STEPS
+
+
+Step 1: Configure the Distributor
+Run this on the Distributor Server (usually the same as the Publisher).
+
+EXEC sp_adddistributor @distributor = 'YourDistributorServer', @password = 'YourStrongPassword';
+
+
+Verify distributor setup:
+SELECT * FROM msdb.dbo.MSdistpublishers;
+
+
+Step 2: Configure the Publisher
+Run this on the Publisher Server (the source database).
+
+
+EXEC sp_addpublication 
+    @publication = 'YourPublicationName', 
+    @publisher = 'YourPublisherServer',
+    @publication_type = 0,  -- 0 = Transactional, 1 = Snapshot, 2 = Merge
+    @status = 1,
+    @sync_method = 0, 
+    @retention = 72, 
+    @allow_push = 1, 
+    @allow_pull = 1,
+    @enabled_for_internet = 0, 
+    @immediate_sync = 1;
+
+
+Verify publication setup:
+
+SELECT * FROM distribution.dbo.MSpublications;
+
+Step 3: Add Articles (Tables to Replicate)
+Run this on the Publisher Server, specifying which tables to replicate.
+
+
+EXEC sp_addarticle 
+    @publication = 'YourPublicationName',
+    @article = 'YourTableName',
+    @source_object = 'YourTableName',
+    @type = 'logbased';
+
+
+To replicate multiple tables, repeat this step for each table.
+
+
+Verify articles:
+
+SELECT * FROM distribution.dbo.MSarticles;
+
+
+Step 4: Configure the Subscriber
+Run this on the Subscriber Server (destination database).
+
+
+EXEC sp_addsubscription 
+    @publication = 'YourPublicationName',
+    @subscriber = 'YourSubscriberServer',
+    @destination_db = 'YourSubscriberDatabase',
+    @subscription_type = 0, -- 0 = Push, 1 = Pull, 2 = Anonymous
+    @sync_type = 'automatic',
+    @status = 1;
+
+
+Verify subscription setup:
+
+SELECT * FROM distribution.dbo.MSsubscriptions;
