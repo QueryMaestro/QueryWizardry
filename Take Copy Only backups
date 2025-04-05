@@ -1,0 +1,27 @@
+Step 1: Take a COPY_ONLY Full Backup
+
+BACKUP DATABASE [YourDatabaseName]
+TO DISK = 'D:\SQLBackups\YourDatabaseName_COPYONLY_FULL.bak'
+WITH COPY_ONLY, NOFORMAT, NOINIT,  
+NAME = 'YourDatabaseName_CopyOnlyFullBackup',  
+SKIP, NOREWIND, NOUN
+
+
+
+Step 2: Take a COPY_ONLY Differential BackupLOAD, COMPRESSION, STATS = 10;
+
+BACKUP DATABASE [YourDatabaseName]
+TO DISK = 'D:\SQLBackups\YourDatabaseName_COPYONLY_DIFF.bak'
+WITH DIFFERENTIAL, COPY_ONLY, NOFORMAT, NOINIT,  
+NAME = 'YourDatabaseName_CopyOnlyDiffBackup',  
+SKIP, NOREWIND, NOUNLOAD, COMPRESSION, STATS = 10;
+
+
+Step 3: Take a COPY_ONLY Transaction Log Backup
+
+
+BACKUP LOG [YourDatabaseName]
+TO DISK = 'D:\SQLBackups\YourDatabaseName_COPYONLY_LOG.trn'
+WITH COPY_ONLY, NOFORMAT, NOINIT,  
+NAME = 'YourDatabaseName_CopyOnlyLogBackup',  
+SKIP, NOREWIND, NOUNLOAD, COMPRESSION, STATS = 10;
