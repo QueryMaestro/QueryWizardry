@@ -1,0 +1,28 @@
+SELECT ServerName         = ar.replica_server_name, 
+        AgName             = ag.[name],
+        DbName             = db_name(ds.database_id), 
+        AgRole             = rs.role_desc,
+        rs.[role],
+        UnsentLogMB        = ds.log_send_queue_size/1024.0,
+        RedoQueueSizeMB    = ds.redo_queue_size/1024.0,
+        RedoEstCompletion  = CASE WHEN redo_rate = 0 THEN 0 ELSE ds.redo_queue_size/ds.redo_rate END,
+        SynchState         = ds.synchronization_state_desc, 
+        AgHealth           = ds.synchronization_health_desc, 
+        SuspendReason      = ds.suspend_reason_desc, 
+        SynchHardenedLSN   = ds.last_hardened_lsn,
+        LastHardenedTime   = ds.last_hardened_time,
+        LastRedoneTime     = ds.last_redone_time,
+        LastCommitTime     = ds.last_commit_time
+FROM sys.availability_groups AS ag
+    JOIN sys.availability_replicas AS ar ON ar.group_id = ag.group_id 
+    JOIN sys.dm_hadr_database_replica_states AS ds ON ds.group_id = ar.group_id AND ds.replica_id = ar.replica_id
+    JOIN sys.dm_hadr_availability_replica_states AS rs ON rs.replica_id = ds.replica_id
+ORDER BY 
+    CASE 
+        WHEN ds.suspend_reason_desc IS NOT NULL THEN 1
+        WHEN ds.synchronization_state_desc <> 'HEALTHY' THEN 1
+        ELSE 9
+    END,
+    rs.role DESC,
+    ds.log_send_queue_size + ds.redo_queue_size DESC;
+ 
