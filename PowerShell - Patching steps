@@ -1,0 +1,50 @@
+#Get pending reboot statuses on primary and secondary
+    #Get-PendingRebootStatus -ComputerName "KYWAL1DBASQL3-P", "KYWAL1DBASQL2-P"
+Get-PendingRebootStatus -ComputerName "<PrimaryPhysicalNodeServerName>", "<SecondaryPhysicalNodeServerName>"
+
+#Show SQL Server service statuses on secondary
+    #Get-service -ComputerName "KYWAL1DBASQL3-P" -Name 'MSSQLSERVER'
+    #Get-service -ComputerName "KYWAL1DBASQL3-P" -Name 'SQLSERVERAGENT'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'MSSQLSERVER'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'SQLSERVERAGENT'
+
+#Stop SQL Server main service
+    #(get-service -ComputerName KYWAL1DBASQL3-P -Name MSSQLSERVER).Stop()
+(get-service -ComputerName <SecondaryPhysicalNodeServerName> -Name MSSQLSERVER).Stop()
+
+#Suspend cluster node/drain AG role on primary
+    #Suspend-ClusterNode -Cluster KYWALNDWCLU1-P -Name KYWAL1DBASQL3-P
+Suspend-ClusterNode -Cluster <ClusterName> -Name <SecondaryPhysicalNodeServerName> 
+
+#Restart server, apply pending patches
+    #Restart-Computer -ComputerName "KYWAL1DBASQL3-P" -Force
+Restart-Computer -ComputerName "<SecondaryPhysicalNodeServerName>" -Force
+
+#Resume cluster node from Paused to Up
+    #Resume-ClusterNode -Cluster KYWALNDWCLU1-P -Name KYWAL1DBASQL3-P
+Resume-ClusterNode -Cluster <ClusterName> -Name <SecondaryPhysicalNodeServerName>
+
+#Failover, suspend cluster node/drain AG role on primary
+    #Suspend-ClusterNode -Cluster KYWALNDWCLU1-P -Name KYWAL1DBASQL2-P -Drain
+Suspend-ClusterNode -Cluster <ClusterName> -Name <PrimaryPhysicalNodeServerName> -Drain
+
+#Show SQL Server service statuses on new secondary
+    #Get-service -ComputerName "KYWAL1DBASQL2-P" -Name 'MSSQLSERVER'
+    #Get-service -ComputerName "KYWAL1DBASQL2-P" -Name 'SQLSERVERAGENT'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'MSSQLSERVER'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'SQLSERVERAGENT'
+
+#Stop SQL Server main service
+    #(get-service -ComputerName KYWAL1DBASQL2-P -Name MSSQLSERVER).Stop()
+(get-service -ComputerName <SecondaryPhysicalNodeServerName> -Name MSSQLSERVER).Stop()
+
+#Show SQL Server service statuses on new secondary
+    #Get-service -ComputerName "KYWAL1DBASQL2-P" -Name 'MSSQLSERVER'
+
+#Restart server, apply pending patches
+    #Restart-Computer -ComputerName "KYWAL1DBASQL2-P" -Force
+Restart-Computer -ComputerName "<SecondaryPhysicalNodeServerName>" -Force
+
+#Resume cluster node from Paused to Up
+    #Resume-ClusterNode -Cluster KYWALNDWCLU1-P -Name KYWAL1DBASQL2-P
+Resume-ClusterNode -Cluster <ClusterName> -Name <SecondaryPhysicalNodeServerName>
