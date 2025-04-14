@@ -1,0 +1,10 @@
+
+USE YourDatabaseName; -- Replace YourDatabaseName with the name of your database
+GO
+
+SELECT 
+    name AS LogFileName,
+    type_desc AS FileType,
+    size * 8 / 1024.0 AS SizeMB -- SQL Server stores file size in pages (1 page = 8KB)
+FROM sys.database_files
+WHERE type = 1; -- 1 indicates LOG file
