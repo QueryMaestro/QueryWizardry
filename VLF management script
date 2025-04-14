@@ -1,0 +1,9 @@
+-- Backup the log to truncate it
+BACKUP LOG [YourDatabase] TO DISK = 'NUL';
+
+-- Shrink the log file to the smallest size possible
+DBCC SHRINKFILE([YourLogFileName], 1);
+
+-- Resize the log file to an optimal size in one step
+ALTER DATABASE [YourDatabase] 
+MODIFY FILE ( NAME = N'YourLogFileName', SIZE = 100MB );
