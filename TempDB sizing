@@ -1,0 +1,22 @@
+--TempDB sizing
+--8 files up to 8 processors, then +4 files per processor beyond
+--3GB initial file size, 500MB auto-growth
+
+USE [master]
+GO
+ALTER DATABASE [tempdb] MODIFY FILE ( NAME = N'tempdev', SIZE = 3072000KB, FILEGROWTH = 512000KB)
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev2', FILENAME = N'E:\MSSQLDataFiles\tempdb2.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev3', FILENAME = N'E:\MSSQLDataFiles\tempdb3.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev4', FILENAME = N'E:\MSSQLDataFiles\tempdb4.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev5', FILENAME = N'E:\MSSQLDataFiles\tempdb5.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev6', FILENAME = N'E:\MSSQLDataFiles\tempdb6.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev7', FILENAME = N'E:\MSSQLDataFiles\tempdb7.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
+ALTER DATABASE [tempdb] ADD FILE ( NAME = N'tempdev8', FILENAME = N'E:\MSSQLDataFiles\tempdb8.ndf' , SIZE = 3072000KB , FILEGROWTH = 512000KB )
+GO
