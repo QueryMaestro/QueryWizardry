@@ -1,0 +1,5 @@
+USE msdb;
+GO
+SELECT name AS JobName, owner_sid, SUSER_SNAME(owner_sid) AS JobOwner
+FROM sysjobs
+WHERE SUSER_SNAME(owner_sid) = 'Domain\Login_name';
