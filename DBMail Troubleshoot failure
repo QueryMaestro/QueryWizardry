@@ -1,0 +1,57 @@
+--DB Mail status
+SELECT sent_status,*
+FROM msdb..sysmail_allitems
+ORDER BY mailitem_id DESC;
+
+
+/*force-restart Database Mail*/
+EXEC msdb.dbo.sysmail_stop_sp;          --stop
+WAITFOR DELAY '00:00:03';               --brief pause
+EXEC msdb.dbo.sysmail_start_sp;         --start
+
+/*if stop hangs: toggle the XPs*/
+EXEC sp_configure 'show advanced',1; RECONFIGURE;
+EXEC sp_configure 'Database Mail XPs',0; RECONFIGURE;
+EXEC sp_configure 'Database Mail XPs',1; RECONFIGURE;
+EXEC msdb.dbo.sysmail_start_sp;
+
+EXEC msdb.dbo.sysmail_stop_sp; WAITFOR DELAY '00:00:02';
+EXEC msdb.dbo.sysmail_start_sp;
+EXEC msdb.dbo.sp_send_dbmail
+@profile_name='SQL Server database mail profile',
+@recipients  ='Kene.jerome@sclogistics.com',
+@subject     ='DB-Mail test',
+@body        ='Mail OK';
+
+EXEC msdb.dbo.sysmail_start_sp;      --start DB-Mail if stopped
+EXEC msdb.dbo.sp_send_dbmail
+@profile_name = 'SQL Server database mail profile',
+@recipients   = 'Kene.jerome@sclogistics.com',
+@subject      = 'DB-Mail test',
+@body         = 'Mail OK';
+
+--------------Confirm DB-Mail is on
+EXEC msdb..sysmail_help_status_sp;     --expect STARTED
+EXEC msdb..sysmail_start_sp;           --start if STOPPED
+
+-----Look for stuck/failed items
+SELECT sent_status,*
+FROM msdb..sysmail_allitems
+ORDER BY mailitem_id DESC;
+
+-----Read the error log for details
+SELECT log_date,description
+FROM msdb..sysmail_event_log
+ORDER BY log_id DESC;
+
+---Validate Service Broker in msdb
+SELECT is_broker_enabled FROM sys.databases WHERE name='msdb';
+
+
+--Confirm account & SMTP parms
+SELECT * FROM msdb..sysmail_server
+WHERE account_id IN (SELECT account_id FROM msdb..sysmail_account 
+WHERE name='TRNSQL01-P SQL Server');
+
+---Requeue unsent mail after fixing issues
+EXEC msdb..sysmail_retry_failedmail_sp;
