@@ -1,0 +1,12 @@
+SELECT  t.name        AS TriggerName,
+       s.name        AS [Schema],
+       OBJECT_NAME(t.parent_id) AS TableName,
+       t.is_disabled AS Disabled,
+       m.definition  AS TriggerSQL
+FROM sys.triggers        t
+JOIN sys.objects         o ON o.object_id = t.object_id
+JOIN sys.schemas         s ON s.schema_id = o.schema_id
+JOIN sys.sql_modules     m ON m.object_id = t.object_id
+WHERE t.is_ms_shipped = 0               --skip system
+ AND t.name NOT LIKE 'Infor%'          --skip Infor-supplied
+ORDER BY TriggerName;
