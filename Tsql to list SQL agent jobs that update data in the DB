@@ -1,0 +1,23 @@
+/*List “custom” SQL Agent steps that appear to MODIFY data in a given DB*/
+DECLARE @db sysname = N'YourDB';                 --<< target database
+SELECT  j.name               AS JobName,
+       s.step_id,
+       s.step_name,
+       s.subsystem,
+       ISNULL(s.database_name,@db) AS ExecDB,
+       CASE j.enabled WHEN 1 THEN 'Yes' ELSE 'No' END AS Enabled,
+       LEFT(s.command,800)  AS CommandSnippet      --trim for readability
+FROM    msdb.dbo.sysjobs       AS j
+JOIN    msdb.dbo.sysjobsteps   AS s   ON s.job_id = j.job_id
+WHERE   s.subsystem   = 'TSQL'                      --T-SQL steps only
+ AND  ( ISNULL(s.database_name,@db) = @db          --runs in @db
+        OR s.command LIKE '%USE ' + @db + '%' )    
+ AND  ( s.command LIKE '%INSERT %'                 --heuristic: DML keywords
+        OR s.command LIKE '%UPDATE %'
+        OR s.command LIKE '%DELETE %'
+        OR s.command LIKE '%MERGE %'
+        OR s.command LIKE '%EXEC %' )              --calling procs that may DML
+ /*optional “custom” filters—remove if unwanted*/
+ AND  j.name      NOT LIKE 'MS[_]%'                --skip Microsoft jobs
+ AND  j.category_id NOT IN (10,11,100)             --skip maint, LS, repl
+ORDER BY j.name, s.step_id;
