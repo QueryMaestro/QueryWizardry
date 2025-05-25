@@ -1,0 +1,44 @@
+
+SELECT
+   l.name AS LoginName,
+   r.name AS ServerRole
+FROM sys.server_role_members rm
+JOIN sys.server_principals r ON rm.role_principal_id = r.principal_id
+JOIN sys.server_principals l ON rm.member_principal_id = l.principal_id
+WHERE l.name = 'YourloginName';
+
+
+
+
+
+DECLARE @LoginName SYSNAME = 'YourLoginName';
+DECLARE @SQL NVARCHAR(MAX) = '';
+SELECT @SQL += '
+USE [' + name + '];
+IF EXISTS (
+   SELECT 1 FROM sys.database_principals WHERE sid = SUSER_SID(''' + @LoginName + ''')
+)
+BEGIN
+   PRINT ''--- [' + name + '] ---'';
+   SELECT ''' + name + ''' AS DatabaseName,
+          dp.name AS UserName,
+          dp.type_desc AS UserType,
+          dr.name AS RoleName
+   FROM sys.database_principals dp
+   LEFT JOIN sys.database_role_members drm ON dp.principal_id = drm.member_principal_id
+   LEFT JOIN sys.database_principals dr ON drm.role_principal_id = dr.principal_id
+   WHERE dp.sid = SUSER_SID(''' + @LoginName + ''');
+   SELECT ''' + name + ''' AS DatabaseName,
+          dp.name AS Grantee,
+          o.name AS ObjectName,
+          p.permission_name,
+          p.state_desc AS PermissionState
+   FROM sys.database_permissions p
+   JOIN sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
+   LEFT JOIN sys.objects o ON p.major_id = o.object_id
+   WHERE dp.sid = SUSER_SID(''' + @LoginName + ''');
+END;
+'
+FROM sys.databases
+WHERE state_desc = 'ONLINE' AND database_id > 4;
+EXEC sp_executesql @SQL;
