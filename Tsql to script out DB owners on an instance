@@ -1,0 +1,22 @@
+--TSQL to script out all DB owners on an instance
+SELECT 
+
+    name AS DatabaseName,
+
+    SUSER_SNAME(owner_sid) AS OwnerLogin
+
+FROM sys.databases
+
+WHERE database_id > 4  -- exclude system databases (optional)
+
+ORDER BY name;
+ 
+ 
+ --TSQL to script out all DB's not owned by SA:
+ SELECT
+   name AS DatabaseName,
+   SUSER_SNAME(owner_sid) AS OwnerLogin
+FROM sys.databases
+WHERE database_id > 4
+ AND SUSER_SNAME(owner_sid) <> 'sa'
+ORDER BY name;
