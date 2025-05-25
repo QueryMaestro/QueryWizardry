@@ -1,0 +1,51 @@
+DECLARE @SourceLogin SYSNAME = 'SourceLogin';
+DECLARE @TargetLogin SYSNAME = 'TargetLogin';
+DECLARE @SQL NVARCHAR(MAX) = '';
+SELECT @SQL += '
+USE [' + name + '];
+IF EXISTS (
+   SELECT 1 FROM sys.database_principals WHERE sid = SUSER_SID(''' + @SourceLogin + ''')
+      AND EXISTS (SELECT 1 FROM sys.database_principals WHERE name = ''' + @TargetLogin + ''')
+)
+BEGIN
+   -- Role Memberships
+   ' + (
+       SELECT STRING_AGG(
+           'EXEC sp_addrolemember ''' + dr.name + ''', ''' + @TargetLogin + ''';',
+           CHAR(10)
+       )
+       FROM sys.databases d
+       CROSS APPLY (
+           SELECT dr.name
+           FROM sys.database_principals dp
+           JOIN sys.database_role_members drm ON dp.principal_id = drm.member_principal_id
+           JOIN sys.database_principals dr ON drm.role_principal_id = dr.principal_id
+           WHERE dp.sid = SUSER_SID(@SourceLogin)
+       ) AS RoleList
+       WHERE d.name = name
+   ) + '
+   -- Explicit Permissions
+   ' + (
+       SELECT STRING_AGG(
+           'GRANT ' + p.permission_name + ' ON ' +
+           COALESCE(QUOTENAME(s.name) + '.' + QUOTENAME(o.name), 'DATABASE::[' + name + ']') +
+           ' TO [' + @TargetLogin + '];',
+           CHAR(10)
+       )
+       FROM sys.databases d
+       CROSS APPLY (
+           SELECT p.permission_name, p.class_desc, o.name, s.name
+           FROM sys.database_permissions p
+           JOIN sys.database_principals dp ON p.grantee_principal_id = dp.principal_id
+           LEFT JOIN sys.objects o ON p.major_id = o.object_id
+           LEFT JOIN sys.schemas s ON o.schema_id = s.schema_id
+           WHERE dp.sid = SUSER_SID(@SourceLogin)
+       ) AS PermList
+       WHERE d.name = name
+   ) + '
+END;
+'
+FROM sys.databases
+WHERE state_desc = 'ONLINE' AND database_id > 4;
+PRINT @SQL;  -- Optional: review before execution
+EXEC sp_executesql @SQL;
