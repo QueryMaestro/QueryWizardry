@@ -1,0 +1,8 @@
+SELECT TB.[name] AS TableWithCDC
+	, TB.is_tracked_by_cdc
+	, CT.role_name
+	, CT.filegroup_name
+	, 'SELECT ''' + TB.[name] + ''', count (1) FROM cdc.dbo_' + TB.[name] + '_CT' AS CheckCDCRowCounts
+FROM sys.tables TB LEFT JOIN cdc.change_tables CT on TB.[object_id] = CT.source_object_id
+where TB.is_tracked_by_cdc = 1
+order by TB.[name];
