@@ -1,0 +1,11 @@
+--Create User in DB in Azure
+Create User [gc-mrcloud-pnpqc-user] FROM EXTERNAL PROVIDER;
+
+
+
+--Add User to the Datareader/datawriter role in Azure
+ALTER ROLE db_datareader ADD MEMBER [gc-mrcloud-pnpqc-user];
+ALTER ROLE db_datawriter ADD MEMBER [gc-mrcloud-pnpqc-user];
+
+--Grant User select permission
+GRANT SELECT ON dbo.ExternalUserSearch TO [gc-mrcloud-pnpqc-user];
