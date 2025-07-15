@@ -1,0 +1,10 @@
+SELECT
+   j.job_id,
+   j.name AS JobName,
+   j.enabled,
+   j.date_created,
+   j.date_modified,
+   s.name AS OwnerName
+FROM msdb.dbo.sysjobs j
+LEFT JOIN sys.syslogins s ON j.owner_sid = s.sid
+ORDER BY OwnerName, JobName;
