@@ -1,0 +1,21 @@
+USE [master]
+GO
+CREATE LOGIN [SADDLECRK.LAN\SVC.CRP.SnowDiscover] FROM WINDOWS WITH DEFAULT_DATABASE=[master];
+GO
+CREATE USER [SADDLECRK.LAN\SVC.CRP.SnowDiscover] FOR LOGIN [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+GRANT VIEW SERVER STATE TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+
+GRANT SELECT ON [sys].[dm_os_schedulers] TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+GRANT SELECT ON [sys].[dm_exec_sessions] TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+GRANT SELECT ON [sys].[configurations] TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+GRANT SELECT ON [sys].[availability_groups] TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+GRANT SELECT ON [sys].[availability_group_listeners] TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
+GRANT SELECT ON [sys].[availability_group_listener_ip_addresses] TO [SADDLECRK.LAN\SVC.CRP.SnowDiscover];
+GO
