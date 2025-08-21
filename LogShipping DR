@@ -1,0 +1,107 @@
+STEPS FOR LOGSHIPPING DR 
+
+1.
+On the Secondary, Run this to start all LSRestore jobs one last time
+
+-- Start all LSRestore jobs one last time
+DECLARE @j sysname;
+DECLARE c CURSOR FAST_FORWARD FOR
+ SELECT name FROM msdb.dbo.sysjobs WHERE name LIKE 'LSRestore_%';
+OPEN c; FETCH NEXT FROM c INTO @j;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+   EXEC msdb.dbo.sp_start_job @job_name = @j;
+   FETCH NEXT FROM c INTO @j;
+END
+CLOSE c; DEALLOCATE c;
+-- Monitor progress
+SELECT
+   secondary_database,
+   last_copied_file,
+   last_restored_file,
+   last_restored_date,
+   DATEDIFF(minute, last_restored_date, GETDATE()) AS minutes_since_last_restore
+FROM msdb.dbo.log_shipping_monitor_secondary
+ORDER BY secondary_database;
+
+
+
+2. Stop running jobs on the secondary serevr:
+
+/* SECONDARY: stop ONLY running LS jobs, then disable them */
+DECLARE @n sysname;
+-- Build list of jobs currently running
+DECLARE c CURSOR FAST_FORWARD FOR
+SELECT j.name
+FROM msdb.dbo.sysjobs j
+JOIN msdb.dbo.sysjobactivity a ON a.job_id = j.job_id
+WHERE (j.name LIKE 'LSRestore_%' OR j.name LIKE 'LSCopy_%')
+ AND a.start_execution_date IS NOT NULL
+ AND a.stop_execution_date IS NULL;
+-- Loop through and stop each
+OPEN c;
+FETCH NEXT FROM c INTO @n;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+   EXEC msdb.dbo.sp_stop_job @job_name = @n;
+   FETCH NEXT FROM c INTO @n;
+END
+CLOSE c;
+DEALLOCATE c;
+-- Disable all LS jobs afterwards
+UPDATE msdb.dbo.sysjobs
+SET enabled = 0
+WHERE name LIKE 'LSRestore_%' OR name LIKE 'LSCopy_%';
+-- Confirm
+SELECT name, enabled
+FROM msdb.dbo.sysjobs
+WHERE name LIKE 'LSRestore_%' OR name LIKE 'LSCopy_%';
+
+3.
+Stop all LS Backup Jobs on the Primary
+
+/* PRIMARY: stop ONLY running LS jobs, then disable them */
+DECLARE @n sysname;
+-- Build list of jobs currently running
+DECLARE c CURSOR FAST_FORWARD FOR
+SELECT j.name
+FROM msdb.dbo.sysjobs j
+JOIN msdb.dbo.sysjobactivity a ON a.job_id = j.job_id
+WHERE (j.name LIKE 'LSRestore_%' OR j.name LIKE 'LSCopy_%')
+ AND a.start_execution_date IS NOT NULL
+ AND a.stop_execution_date IS NULL;
+-- Loop through and stop each
+OPEN c;
+FETCH NEXT FROM c INTO @n;
+WHILE @@FETCH_STATUS = 0
+BEGIN
+   EXEC msdb.dbo.sp_stop_job @job_name = @n;
+   FETCH NEXT FROM c INTO @n;
+END
+CLOSE c;
+DEALLOCATE c;
+-- Disable all LS jobs afterwards
+UPDATE msdb.dbo.sysjobs
+SET enabled = 0
+WHERE name LIKE 'LSBackup_%' OR name LIKE 'LSCopy_%';
+-- Confirm
+SELECT name, enabled
+FROM msdb.dbo.sysjobs
+WHERE name LIKE 'LSBackup_%' OR name LIKE 'LSCopy_%';
+
+4.
+
+Bring all the databases Online:
+
+-- Recover ALL secondary DBs currently in RESTORING/STANDBY
+DECLARE @sql nvarchar(max) =
+(SELECT STRING_AGG('RESTORE DATABASE ['+name+'] WITH RECOVERY;', CHAR(10))
+FROM sys.databases
+WHERE state_desc IN ('RESTORING','STANDBY'));
+PRINT @sql;  -- review the statements
+EXEC (@sql);
+-- Verify
+SELECT name, state_desc
+FROM sys.databases
+WHERE name NOT IN ('master','model','msdb','tempdb', 'DBA')
+ORDER BY name;
