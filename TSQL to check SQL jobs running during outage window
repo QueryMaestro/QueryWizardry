@@ -1,0 +1,17 @@
+USE msdb;
+GO
+DECLARE @StartTime DATETIME = '2025-09-23T01:50:00';
+DECLARE @EndTime   DATETIME = '2025-09-23T02:30:00';
+SELECT j.name AS JobName,
+      a.start_execution_date,
+      a.stop_execution_date,
+      s.session_id
+FROM sysjobactivity a
+JOIN sysjobs j     ON a.job_id = j.job_id
+JOIN syssessions s ON a.session_id = s.session_id
+WHERE a.start_execution_date <= @EndTime
+ AND (a.stop_execution_date IS NULL OR a.stop_execution_date >= @StartTime)
+ORDER BY a.start_execution_date;
+
+
+--change start date and end time per the outage window
