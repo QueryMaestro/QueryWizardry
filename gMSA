@@ -1,0 +1,107 @@
+Service Account Switch to gMSA on Clusters:
+
+--Execute the below on both nodes: To add gMSA login to the server 
+ 
+USE [master]
+GO
+CREATE LOGIN [SADDLECRK.LAN\gMSA.SQLServers$] FROM WINDOWS WITH DEFAULT_DATABASE=[master]
+GO
+ALTER SERVER ROLE [sysadmin] ADD MEMBER [SADDLECRK.LAN\gMSA.SQLServers$]
+GO
+-----------------
+
+gMSA details for Service Account and Agent account:
+
+gMSA Service Account: SADDLECRK.LAN\setspn -A MSSQLSvc/gMSA.SQLServers$setspn -L gMSA.SQLServers$
+gMSA Agent Account: SADDLECRK.LAN\gMSA.SQLAgents$
+
+
+------------------------------------------------------
+
+
+
+SADDLECRK.LAN\services.sqlserver
+Cur1ou$#
+
+
+SADDLECRK.LAN\Services.SQLServerAgent
+Cur1ou$#
+
+
+Services
+
+sql.sccedissis$
+
+gMSA.SQLServers$
+
+KYWAL1DBASQL2-P.saddlecrk.lan
+
+
+
+AZLIT sa
+Sometimes-Sanity-Is-$@fe
+
+
+
+KYWAL1DBASQL3-P install + post install, 
+AZLIT1DBASQL3-P install + post install,
+AZLIT1DBASQL2-P install + post install,
+Service acct switch to gMSA for KY Wal/phx servers,
+Polybase feature uninstall on KYWAL1DBASQL3-P,
+Custom Solutions doc update,
+
+
+
+
+Wint@rinJu1y
+
+
+
+gMSA accounts:
+
+Service Account: gMSA.SQLServers$
+Agent Account: gMSA.SQLAgents$
+
+
+
+New SQL Server Passwords
+Summ@r1N0ctob@r
+
+
+
+SQL Server Password for DBAMON01-P (SQL sentry POC server): Wint@rinJu1y
+
+------------------------------------
+
+NT Service\SQLSERVERAGENT 
+
+NT Service\MSSQLSERVER
+
+
+$umm@R1n0ctob@r
+
+
+
+\\pure-ldcp\Apps\Microsoft Silverlight\Microsoft\SQL\SQLServer2022\ENT
+
+\\pure-ldcp\Apps\Microsoft Silverlight\Microsoft\SQL\SQLServer2022
+
+
+
+T:\MSSQLTempDBFiles\MSSQL16.MSSQLSERVER\MSSQL\Data
+
+
+
+DBASQL05-T sa:
+Summ@r1NDecemb@r
+
+
+E-WMSSQL01-T sa:
+Summ@r1NDecemb@r
+
+E-WMSSQL02-T sa:
+Summ@r1NDecemb@r
+
+
+
+C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\<timestamp>\
