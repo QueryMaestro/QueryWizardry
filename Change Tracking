@@ -1,0 +1,35 @@
+Change Tracking Checks and execution
+
+
+-- A) Is CT actually on & does table have a PK?
+SELECT t.name, ct.object_id AS CT_On, pk.name AS PK_Name
+FROM sys.tables t
+LEFT JOIN sys.change_tracking_tables ct ON ct.object_id=t.object_id
+LEFT JOIN sys.key_constraints pk ON pk.parent_object_id=t.object_id AND pk.type='PK'
+WHERE t.schema_id=SCHEMA_ID('dbo') AND t.name='CustomerRate';
+
+
+-- B) Does the connector effectively have SELECT on this table?
+EXECUTE AS LOGIN='DatabricksReader';
+SELECT HAS_PERMS_BY_NAME('dbo.CustomerRate','OBJECT','SELECT') AS HasSelect,
+      HAS_PERMS_BY_NAME(DB_NAME(),'DATABASE','VIEW DATABASE STATE') AS HasViewDBState;
+REVERT;
+-- C) Is it a view/synonym (CHANGETABLE requires a base table)?
+SELECT o.name,o.type_desc
+FROM sys.objects o
+WHERE o.object_id=OBJECT_ID('dbo.CustomerRate');
+-- D) Any object-level GRANT/DENY lingering on this table?
+SELECT dp.name,p.permission_name,p.state_desc,p.class_desc,OBJECT_NAME(p.major_id) AS Obj
+FROM sys.database_permissions p
+JOIN sys.database_principals dp ON dp.principal_id=p.grantee_principal_id
+WHERE p.major_id=OBJECT_ID('dbo.CustomerRate');
+----------------------------------------------------------------------
+
+USE [worms];
+GRANT VIEW DATABASE STATE TO [DatabricksReader];
+GRANT SELECT ON OBJECT::[dbo].[CustomerRate] TO [DatabricksReader];
+
+-----------------------------------------------------------------------
+
+ALTER TABLE dbo.CustomerRate DISABLE CHANGE_TRACKING;
+ALTER TABLE dbo.CustomerRate ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON);
