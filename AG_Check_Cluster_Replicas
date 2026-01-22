@@ -1,0 +1,8 @@
+SELECT cls.cluster_name AS ClusterName, agl.dns_name AS AGListner, ag.[name] AS AGName, ar.replica_server_name AS ReplicaName, ars.role_desc AS ReplicaRole, ags.synchronization_health_desc AS AGHealth 
+FROM sys.dm_hadr_availability_group_states ags 
+INNER JOIN sys.availability_groups ag ON ag.group_id = ags.group_id 
+JOIN sys.availability_group_listeners agl ON ag.group_id = agl.group_id 
+JOIN sys.availability_replicas ar ON ags.group_id = ar.group_id 
+JOIN sys.dm_hadr_availability_replica_states ars ON ar.replica_id = ars.replica_id 
+CROSS APPLY (SELECT cluster_name 
+FROM sys.dm_hadr_cluster) cls;
