@@ -1,0 +1,41 @@
+/* SQL Server alerts for AvailabilityGroups SS2012 */
+
+
+/****** Object:  Alert [AG Data movement resumed]    Script Date: 1/22/2015 8:55:22 AM ******/
+EXEC msdb.dbo.sp_add_alert @name=N'AG Data movement resumed', 
+		@message_id=35265, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=0, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+GO
+EXEC msdb.dbo.sp_add_notification @alert_name=N'AG Data movement resumed', @operator_name=N'SCCDBA', @notification_method = 7;
+GO
+
+/****** Object:  Alert [AG Data movement suspended]    Script Date: 1/22/2015 8:55:22 AM ******/
+EXEC msdb.dbo.sp_add_alert @name=N'AG Data movement suspended', 
+		@message_id=35264, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=0, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+GO
+EXEC msdb.dbo.sp_add_notification @alert_name=N'AG Data movement suspended', @operator_name=N'SCCDBA', @notification_method = 7;
+GO
+
+/****** Object:  Alert [AG Role change]    Script Date: 1/22/2015 8:55:22 AM ******/
+EXEC msdb.dbo.sp_add_alert @name=N'AG Role change', 
+		@message_id=1480, 
+		@severity=0, 
+		@enabled=1, 
+		@delay_between_responses=0, 
+		@include_event_description_in=1, 
+		@category_name=N'[Uncategorized]', 
+		@job_id=N'00000000-0000-0000-0000-000000000000'
+GO
+EXEC msdb.dbo.sp_add_notification @alert_name=N'AG Role change', @operator_name=N'SCCDBA', @notification_method = 7;
+GO
