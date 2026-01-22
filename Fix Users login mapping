@@ -1,0 +1,12 @@
+ALTER USER reporter WITH LOGIN = reporter
+
+sp_change_users_login 'report'
+
+
+
+--------------------------------------------------
+
+
+sp_change_users_login 'report'  --SQL Server 2000 execute this in the database you need to view users-logins that need to be mapped
+
+sp_change_users_login 'update_one', '<username>', '<loginname>'  --SQL Server 2000 execute this in the database you need to map the username to loginname
