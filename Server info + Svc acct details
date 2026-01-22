@@ -1,0 +1,19 @@
+SELECT  
+   @@SERVERNAME AS server_name,
+   servicename,
+   service_account
+FROM sys.dm_server_services
+WHERE service_account LIKE 'NT SERVICE\%'      -- virtual accounts
+  OR service_account LIKE 'LocalSystem%'
+  OR service_account LIKE 'NT AUTHORITY\%';
+  -----------------------------------------------------
+  SELECT  
+   @@SERVERNAME AS server_name,
+   servicename,
+   service_account
+FROM sys.dm_server_services
+WHERE service_account LIKE '%\%';
+-------------------------------------
+SELECT auth_scheme
+FROM sys.dm_exec_connections
+WHERE session_id = @@SPID;
