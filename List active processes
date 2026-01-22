@@ -1,0 +1,35 @@
+--SQL 2005+
+DECLARE @LongerThanMin INT = 2;  --minute value for insepcting processes older than number minutes
+
+SELECT  @@SERVERNAME AS SERVERNAME
+	, sproc.loginame LoginID
+	, sproc.nt_domain AS NTDomain
+	, sproc.nt_username AS NTUserName
+	, sproc.Hostname AS HostName
+	, sproc.hostprocess AS HostProcess
+	, sproc.SPID AS SessionID
+	, sproc.ecid AS ExecutionContext
+	, CASE WHEN sproc.waittime = 0 THEN '' ELSE sproc.lastwaittype END AS WaitType
+	, sproc.waitresource AS WaitResource
+	, sproc.waittime AS WaitTime
+	, CASE WHEN sproc.blocked = 0 THEN 0 ELSE sproc.blocked END AS BlockedBy
+	, sproc.last_batch AS BatchStart
+	, DATEDIFF(SECOND,sproc.last_batch,GETDATE()) ElapsedSeconds
+	, DATEDIFF(mi,sproc.last_batch,GETDATE()) ElapsedMins
+	, sproc.status AS [Status]
+	, DB_NAME(sproc.dbid) AS DBName
+	, sproc.cmd AS Command
+	, LEN(sqltext.TEXT) AS QueryLength
+	, ISNULL(SUBSTRING(sqltext.TEXT, (sproc.stmt_start/2)+1, 
+        ((CASE sproc.stmt_end
+          WHEN -1 THEN DATALENGTH(sqltext.TEXT)
+         ELSE sproc.stmt_end
+         END - sproc.stmt_start)/2) + 1),'') AS QueryStatement
+FROM master.sys.sysprocesses sproc OUTER APPLY master.sys.dm_exec_sql_text(sproc.sql_handle) AS sqltext
+WHERE sproc.SPID <> @@SPID
+	AND sproc.SPID > 50
+	AND sproc.cmd <> 'AWAITING COMMAND'
+	AND sproc.cmd NOT IN ('DBMIRRORING_CMD')
+	AND sproc.loginame <> 'sa'
+	AND DATEDIFF(mi,sproc.last_batch,GETDATE()) > @LongerThanMin
+ORDER BY sproc.SPID, sproc.ecid;
