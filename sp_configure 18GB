@@ -1,0 +1,41 @@
+sp_configure 'show advanced options', 1
+GO
+RECONFIGURE WITH override
+GO
+
+sp_configure 'backup compression default', 1
+GO
+RECONFIGURE WITH override
+GO
+
+sp_configure 'Database Mail XPs', 1
+GO
+RECONFIGURE WITH override
+GO
+
+sp_configure 'fill factor (%)', 80
+GO
+RECONFIGURE WITH override
+GO
+
+/*  CAUTION Memory configuration:
+	For max server memory (MB)
+		If SQL Server is only application on the host Windows server, configure max server memory (MB) up to 80% of physical memory.
+*/
+--sp_configure 'max server memory (MB)', 18432
+--GO
+--RECONFIGURE WITH override
+--GO
+
+--sp_configure 'min server memory (MB)', 1024
+--GO
+--RECONFIGURE WITH override
+--GO
+
+sp_configure 'optimize for ad hoc workloads', 1
+GO
+RECONFIGURE WITH override
+GO
+
+--returns server resource configuration
+xp_msver
