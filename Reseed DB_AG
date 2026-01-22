@@ -1,0 +1,47 @@
+--Primary
+--validate replica endpoints are IPv4
+ALTER AVAILABILITY GROUP [AG_MSTRMetadata]
+MODIFY REPLICA ON 'MSTSQL04-P' WITH (ENDPOINT_URL = 'TCP://172.30.100.191:5022')
+GO
+ALTER AVAILABILITY GROUP [AG_MSTRMetadata]
+MODIFY REPLICA ON 'MSTSQL05-P' WITH (ENDPOINT_URL = 'TCP://172.30.100.192:5022')
+GO
+--backup primary replica database
+BACKUP DATABASE [MSTR_Metadata] TO  DISK = N'\\10.10.163.21\exasql11-p\MSSQLBackups\MSTSQL04-P\MSSQLBackups\MSTR_Metatdata_AGSync.BAK' WITH FORMAT, INIT,  NAME = N'MSTR_Metadata-Full Database Backup', SKIP, NOREWIND, NOUNLOAD, COMPRESSION,  STATS = 10, CHECKSUM
+GO
+declare @backupSetId as int
+select @backupSetId = position from msdb..backupset where database_name=N'MSTR_Metadata' and backup_set_id=(select max(backup_set_id) from msdb..backupset where database_name=N'MSTR_Metadata' )
+if @backupSetId is null begin raiserror(N'Verify failed. Backup information for database ''MSTR_Metadata'' not found.', 16, 1) end
+RESTORE VERIFYONLY FROM  DISK = N'\\10.10.163.21\exasql11-p\MSSQLBackups\MSTSQL04-P\MSSQLBackups\MSTR_Metatdata_AGSync.BAK' WITH  FILE = @backupSetId,  NOUNLOAD,  NOREWIND
+GO
+--backup primary replica transaction log
+BACKUP LOG [MSTR_Metadata] TO  DISK = N'\\10.10.163.21\exasql11-p\MSSQLBackups\MSTSQL04-P\MSSQLBackups\MSTR_Metadata_AGSync.TRN' WITH FORMAT, INIT,  NAME = N'MSTR_Metadata-Transaction Log Backup', SKIP, NOREWIND, NOUNLOAD, COMPRESSION,  STATS = 10, CHECKSUM
+GO
+declare @backupSetId as int
+select @backupSetId = position from msdb..backupset where database_name=N'MSTR_Metadata' and backup_set_id=(select max(backup_set_id) from msdb..backupset where database_name=N'MSTR_Metadata' )
+if @backupSetId is null begin raiserror(N'Verify failed. Backup information for database ''MSTR_Metadata'' not found.', 16, 1) end
+RESTORE VERIFYONLY FROM  DISK = N'\\10.10.163.21\exasql11-p\MSSQLBackups\MSTSQL04-P\MSSQLBackups\MSTR_Metadata_AGSync.TRN' WITH  FILE = @backupSetId,  NOUNLOAD,  NOREWIND
+GO
+
+
+
+--Secondary
+--restore primary replica database to secondary
+USE [master]
+RESTORE DATABASE [MSTR_Metadata] FROM  DISK = N'\\10.10.163.21\exasql11-p\MSSQLBackups\MSTSQL04-P\MSSQLBackups\MSTR_Metatdata_AGSync.BAK' WITH  FILE = 1,  MOVE N'MSTRdmRepository_log' TO N'F:\MSSQLTransactionLogFiles\MSTR_Metadata_1.ldf',  NORECOVERY,  NOUNLOAD,  STATS = 5
+GO
+--restore primary replica transaction log to secondary
+RESTORE LOG [MSTR_Metadata] FROM  DISK = N'\\10.10.163.21\exasql11-p\MSSQLBackups\MSTSQL04-P\MSSQLBackups\MSTR_Metadata_AGSync.TRN' WITH  FILE = 1,  NORECOVERY,  NOUNLOAD,  STATS = 10
+GO
+
+
+--SQLCMD
+:CONNECT MSTSQL04-P
+USE [master]
+GO
+ALTER AVAILABILITY GROUP [AG_MSTRMetadata] ADD DATABASE [MSTR_Metadata];
+
+:CONNECT MSTSQL05-P
+USE [master]
+GO
+ALTER DATABASE [MSTR_Metadata] SET HADR AVAILABILITY GROUP = [AG_MSTRMetadata];
