@@ -1,0 +1,73 @@
+Payroll:
+
+
+When the email containing the attachment is received.
+Download it 
+Save it on Desktop and remove password/encryption
+Rename (Eliminate the "Copy of") in the name.
+
+Save copy to the location below:
+\\SCCEDISSIS\d$
+\\EDISIS01-P\d$
+\\CRPRPT01-P\d$
+\\pure-ldcp\AppData\DataManagement\Finance
+
+Under SSIS Work - FinancePR
+
+Navigate to the location to confirm copy exists
+Close spreadsheet on desktop.
+
+Schedule the job to run
+
+
+
+mstsc /v: SCCEDISSIS /admin /f
+
+Workd@y2023
+
+Workd@y2023
+
+Pure storage directory for the SQL server 2016 - SP3 executable:
+\\pure-ldcp\Apps\Microsoft\SQL\SQLServer2016
+
+
+
+\SSISDB\Finance\FinancePRImport\SSIS_DailyFinancePRDataset.dtsx
+
+
+\SSISDB\Finance\FinancePRImport\SSIS_DailyFinancePRDataset.dtsx
+
+
+Troubleshooting duplicate records/Upload:
+
+
+--To select total count of records:
+
+SELECT count(1)
+  FROM [FinancePR].[dbo].[PRData_Ptn]
+  where [cy] = 2025     --(Subject to change depending on calendar year)
+	and [month] = 'May'  --(Subject to change depending on current month)
+	and [week] = 23   --(Subject to change depending on current week)
+
+
+-- To preview record before deleting:
+
+SELECT *
+FROM [FinancePR].[dbo].[PRData_Ptn]
+WHERE [cy] = 2025   --(Subject to change depending on calendar year)
+ AND [month] = 'May' -- (Subject to change depending on current month)
+ AND [week] = 23;  --(Subject to change depending on current week)
+ 
+--To delete record:
+
+DELETE FROM [FinancePR].[dbo].[PRData_Ptn]
+WHERE [cy] = 2025   --(Subject to change depending on calendar year)
+ AND [month] = 'May'  --(Subject to change depending on current month)
+ AND [week] = 23;  --(Subject to change depending on current week)
+ 
+ 
+ 
+ 
+ 10.210.4.34
+ 
+ 10.10.161.213
