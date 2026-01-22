@@ -1,0 +1,16 @@
+--Move database file location, >SQL Server 2008R2
+ALTER DATABASE <DBName>
+MODIFY FILE (NAME = <DBFileName>, FILENAME = <PhysicalMDFFilePathName>);
+--primary file
+ALTER DATABASE <DBName>
+MODIFY FILE (NAME = <DBFileName>, FILENAME = <PhysicalNDFFilePathName>);
+--secondary files (if required)
+...
+ALTER DATABASE <DBName>
+MODIFY FILE (NAME = <DBLogFileName>, FILENAME = <PhysicalLDFFilePathName>);
+--log file
+GO
+ALTER DATABASE <DBName> SET OFFLINE;
+--take DB offline to move physcial database file(s)
+ALTER DATABASE <DBName> SET ONLINE;
+--bring online after physcial database file(s) move
