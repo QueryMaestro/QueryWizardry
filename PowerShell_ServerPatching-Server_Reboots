@@ -1,0 +1,39 @@
+#Get pending reboot statuses on primary and secondary
+    #Get-PendingRebootStatus -ComputerName "ENTSQL01-T", "ENTSQL02-T"
+Get-PendingRebootStatus -ComputerName "<PrimaryPhysicalNodeServerName>", "<SecondaryPhysicalNodeServerName>"
+
+#Show SQL Server service statuses on secondary
+    #Get-service -ComputerName "ENTSQL02-T" -Name 'MSSQLSERVER'
+    #Get-service -ComputerName "ENTSQL02-T" -Name 'SQLSERVERAGENT'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'MSSQLSERVER'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'SQLSERVERAGENT'
+
+#Stop SQL Server main service
+    #(get-service -ComputerName ENTSQL02-T -Name MSSQLSERVER).Stop()
+(get-service -ComputerName <SecondaryPhysicalNodeServerName> -Name MSSQLSERVER).Stop()
+
+#Restart server, apply pending patches
+    #Restart-Computer -ComputerName "ENTSQL02-T" -Force
+Restart-Computer -ComputerName "<SecondaryPhysicalNodeServerName>" -Force
+
+#Failover, suspend cluster node/drain AG role on primary
+    #Suspend-ClusterNode -Cluster DBACLU1-T -Name ENTSQL01-T -Drain
+Suspend-ClusterNode -Cluster <ClusterName> -Name <PrimaryPhysicalNodeServerName> -Drain
+
+#Show SQL Server service statuses on new secondary
+    #Get-service -ComputerName "ENTSQL01-T" -Name 'MSSQLSERVER'
+    #Get-service -ComputerName "ENTSQL01-T" -Name 'SQLSERVERAGENT'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'MSSQLSERVER'
+Get-service -ComputerName "<SecondaryPhysicalNodeServerName>" -Name 'SQLSERVERAGENT'
+
+#Stop SQL Server main service
+    #(get-service -ComputerName ENTSQL01-T -Name MSSQLSERVER).Stop()
+(get-service -ComputerName <SecondaryPhysicalNodeServerName> -Name MSSQLSERVER).Stop()
+
+#Restart server, apply pending patches
+    #Restart-Computer -ComputerName "ENTSQL01-T" -Force
+Restart-Computer -ComputerName "<SecondaryPhysicalNodeServerName>" -Force
+
+#Resume cluster node from Paused to Up
+    #Resume-ClusterNode -Cluster DBACLU1-T -Name ENTSQL01-T
+Resume-ClusterNode -Cluster <ClusterName> -Name <SecondaryPhysicalNodeServerName>
